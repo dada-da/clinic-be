@@ -1,0 +1,5 @@
+flyway.url=jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+flyway.user=${DB_USER}
+flyway.password=${DB_PASSWORD}
+flyway.locations=filesystem:src/main/resources/db/migration
+flyway.baselineOnMigrate=true
