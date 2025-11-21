@@ -2,64 +2,41 @@ package com.clinic;
 
 import com.clinic.config.EnvConfig;
 import com.clinic.config.FlywayMigration;
-import org.flywaydb.core.api.output.MigrateResult;
+import com.clinic.controller.PatientController;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.javalin.Javalin;
+import io.javalin.json.JavalinJackson;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("=== REST API Project Setup Check ===\n");
+        System.out.println("=== Clinic REST API Starting ===\n");
 
         try {
-            // 1. Validate and print environment configuration
-            System.out.println("1. Environment Configuration:");
-            if (!EnvConfig.validateRequiredEnvVars()) {
-                System.err.println("\n✗ Missing required environment variables!");
-                System.err.println("Please check your .env file");
-                return;
-            }
+            // 1. Load environment configuration
+            System.out.println("1. Loading Configuration...");
             EnvConfig.printConfiguration();
 
             // 2. Test database connection
-            System.out.println("2. Database Connection:");
+            System.out.println("2. Testing Database Connection...");
             testDatabaseConnection();
 
-            // 3. Run Flyway migrations
-            System.out.println("3. Database Migrations (Flyway):");
+            // 3. Run database migrations
+            System.out.println("3. Running Database Migrations...");
             FlywayMigration migration = new FlywayMigration();
+            migration.migrate();
+            System.out.println();
 
-            // Print current migration status
-            migration.printMigrationStatus();
-
-            // Run migrations if needed
-            if (migration.needsMigration()) {
-                System.out.println("Running pending migrations...");
-                MigrateResult result = migration.migrate();
-            } else {
-                System.out.println("No pending migrations.");
-            }
-
-            // Validate migrations
-            migration.validate();
-
-            System.out.println("Current database version: " + migration.getCurrentVersion());
-
-            // 4. Verify database schema
-            System.out.println("\n4. Database Schema Verification:");
-            verifyDatabaseSchema();
-
-            System.out.println("\n=== ✓ All checks passed! ===");
-            System.out.println("Your project is ready to run.");
-            System.out.println("\nNext steps:");
-            System.out.println("1. Create your REST endpoints in the controller package");
-            System.out.println("2. Add business logic in the service package");
-            System.out.println("3. Implement data access in the repository package");
+            // 4. Start REST API server
+            System.out.println("4. Starting REST API Server...");
+            startRestApiServer();
 
         } catch (Exception e) {
-            System.err.println("\n✗ Setup check failed: " + e.getMessage());
+            System.err.println("\n✗ Startup failed: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         }
@@ -74,42 +51,70 @@ public class Main {
                     EnvConfig.getDbPassword()
             )) {
                 System.out.println("   ✓ Database connection successful");
-                System.out.println("   Connected to: " + conn.getMetaData().getURL());
+                System.out.println();
             }
         } catch (Exception e) {
-            System.err.println("   ✗ Database connection failed: " + e.getMessage());
-            System.err.println("   Please check:");
-            System.err.println("   - MySQL is running");
-            System.err.println("   - Database '" + EnvConfig.getDbName() + "' exists");
-            System.err.println("   - Credentials in .env are correct");
             throw new RuntimeException("Database connection failed", e);
         }
     }
 
-    private static void verifyDatabaseSchema() {
-        try (Connection conn = DriverManager.getConnection(
-                EnvConfig.getDbUrl(),
-                EnvConfig.getDbUser(),
-                EnvConfig.getDbPassword()
-        )) {
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SHOW TABLES");
+    private static void startRestApiServer() {
+        int port = EnvConfig.getAppPort();
 
-            System.out.println("   Tables in database:");
-            boolean hasTables = false;
-            while (rs.next()) {
-                System.out.println("   - " + rs.getString(1));
-                hasTables = true;
-            }
+        // Configure Jackson ObjectMapper for Java 8 date/time support
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-            if (!hasTables) {
-                System.out.println("   (No tables yet - migrations may not have run)");
-            }
+        Javalin app = Javalin.create(config -> {
+            config.showJavalinBanner = false;
+            config.jsonMapper(new JavalinJackson(objectMapper));
+        }).start(port);
 
-            System.out.println("   ✓ Database schema verified");
-        } catch (Exception e) {
-            System.err.println("   ✗ Schema verification failed: " + e.getMessage());
-            throw new RuntimeException("Schema verification failed", e);
+        // Initialize controllers
+        PatientController patientController = new PatientController();
+
+        // Health check endpoint
+        app.get("/", ctx -> ctx.result("Clinic REST API is running!"));
+        app.get("/health", ctx -> {
+            ctx.json(new HealthResponse("OK", "Clinic API is healthy"));
+        });
+
+        // Patient endpoints
+        app.get("/api/patients", patientController::getAllPatients);
+        app.get("/api/patients/{id}", patientController::getPatientById);
+        app.post("/api/patients", patientController::createPatient);
+        app.put("/api/patients/{id}", patientController::updatePatient);
+        app.delete("/api/patients/{id}", patientController::deletePatient);
+
+        // TODO: Add more endpoints for doctors, appointments, etc.
+
+        System.out.println("✓ REST API Server started successfully");
+        System.out.println("   URL: http://localhost:" + port);
+        System.out.println("   Health Check: http://localhost:" + port + "/health");
+        System.out.println("   API Endpoints:");
+        System.out.println("   - GET    /api/patients");
+        System.out.println("   - GET    /api/patients/{id}");
+        System.out.println("   - POST   /api/patients");
+        System.out.println("   - PUT    /api/patients/{id}");
+        System.out.println("   - DELETE /api/patients/{id}");
+        System.out.println("\n=== Server is ready to accept requests ===");
+    }
+
+    // Health response class
+    static class HealthResponse {
+        private String status;
+        private String message;
+
+        public HealthResponse(String status, String message) {
+            this.status = status;
+            this.message = message;
         }
+
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
     }
 }
