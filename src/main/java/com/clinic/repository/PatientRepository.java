@@ -48,17 +48,56 @@ public class PatientRepository {
         return null;
     }
 
+    public Patient findBySocialId(String socialId) throws SQLException {
+        String sql = "SELECT * FROM patient WHERE social_id = ?";
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, socialId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToPatient(rs);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public boolean existsBySocialId(String socialId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM patient WHERE social_id = ?";
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, socialId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public Patient create(Patient patient) throws SQLException {
-        String sql = "INSERT INTO patient (full_name, dob, gender, address, phone) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO patient (social_id, full_name, dob, gender, address, phone, email) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            pstmt.setString(1, patient.getFullName());
-            pstmt.setDate(2, patient.getDob() != null ? Date.valueOf(patient.getDob()) : null);
-            pstmt.setString(3, patient.getGender());
-            pstmt.setString(4, patient.getAddress());
-            pstmt.setString(5, patient.getPhone());
+            pstmt.setString(1, patient.getSocialId());
+            pstmt.setString(2, patient.getFullName());
+            pstmt.setDate(3, patient.getDob() != null ? Date.valueOf(patient.getDob()) : null);
+            pstmt.setString(4, patient.getGender());
+            pstmt.setString(5, patient.getAddress());
+            pstmt.setString(6, patient.getPhone());
+            pstmt.setString(7, patient.getEmail());
 
             int affectedRows = pstmt.executeUpdate();
 
@@ -78,17 +117,20 @@ public class PatientRepository {
     }
 
     public Patient update(Integer id, Patient patient) throws SQLException {
-        String sql = "UPDATE patient SET full_name = ?, dob = ?, gender = ?, address = ?, phone = ? WHERE id = ?";
+        String sql = "UPDATE patient SET social_id = ?, full_name = ?, dob = ?, gender = ?, " +
+                "address = ?, phone = ?, email = ? WHERE id = ?";
 
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, patient.getFullName());
-            pstmt.setDate(2, patient.getDob() != null ? Date.valueOf(patient.getDob()) : null);
-            pstmt.setString(3, patient.getGender());
-            pstmt.setString(4, patient.getAddress());
-            pstmt.setString(5, patient.getPhone());
-            pstmt.setInt(6, id);
+            pstmt.setString(1, patient.getSocialId());
+            pstmt.setString(2, patient.getFullName());
+            pstmt.setDate(3, patient.getDob() != null ? Date.valueOf(patient.getDob()) : null);
+            pstmt.setString(4, patient.getGender());
+            pstmt.setString(5, patient.getAddress());
+            pstmt.setString(6, patient.getPhone());
+            pstmt.setString(7, patient.getEmail());
+            pstmt.setInt(8, id);
 
             int affectedRows = pstmt.executeUpdate();
 
@@ -113,9 +155,29 @@ public class PatientRepository {
         }
     }
 
+    public List<Patient> searchByName(String name) throws SQLException {
+        List<Patient> patients = new ArrayList<>();
+        String sql = "SELECT * FROM patient WHERE full_name LIKE ? ORDER BY full_name";
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, "%" + name + "%");
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    patients.add(mapResultSetToPatient(rs));
+                }
+            }
+        }
+
+        return patients;
+    }
+
     private Patient mapResultSetToPatient(ResultSet rs) throws SQLException {
         Patient patient = new Patient();
         patient.setId(rs.getInt("id"));
+        patient.setSocialId(rs.getString("social_id"));
         patient.setFullName(rs.getString("full_name"));
 
         Date dob = rs.getDate("dob");
@@ -126,6 +188,7 @@ public class PatientRepository {
         patient.setGender(rs.getString("gender"));
         patient.setAddress(rs.getString("address"));
         patient.setPhone(rs.getString("phone"));
+        patient.setEmail(rs.getString("email"));
 
         Timestamp createdAt = rs.getTimestamp("created_at");
         if (createdAt != null) {

@@ -45,6 +45,44 @@ public class PatientController {
         }
     }
 
+    public void getPatientBySocialId(Context ctx) {
+        try {
+            String socialId = ctx.pathParam("socialId");
+            Patient patient = patientService.getPatientBySocialId(socialId);
+
+            if (patient != null) {
+                ctx.json(patient);
+            } else {
+                ctx.status(HttpStatus.NOT_FOUND)
+                        .json(new ErrorResponse("Patient not found with social ID: " + socialId));
+            }
+        } catch (SQLException e) {
+            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .json(new ErrorResponse("Failed to fetch patient: " + e.getMessage()));
+        }
+    }
+
+    public void searchPatients(Context ctx) {
+        try {
+            String name = ctx.queryParam("name");
+
+            if (name == null || name.trim().isEmpty()) {
+                ctx.status(HttpStatus.BAD_REQUEST)
+                        .json(new ErrorResponse("Search name parameter is required"));
+                return;
+            }
+
+            List<Patient> patients = patientService.searchPatientsByName(name);
+            ctx.json(patients);
+        } catch (IllegalArgumentException e) {
+            ctx.status(HttpStatus.BAD_REQUEST)
+                    .json(new ErrorResponse(e.getMessage()));
+        } catch (SQLException e) {
+            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .json(new ErrorResponse("Failed to search patients: " + e.getMessage()));
+        }
+    }
+
     public void createPatient(Context ctx) {
         try {
             Patient patient = ctx.bodyAsClass(Patient.class);
@@ -103,6 +141,7 @@ public class PatientController {
         }
     }
 
+    // Error response class
     public static class ErrorResponse {
         private String error;
 

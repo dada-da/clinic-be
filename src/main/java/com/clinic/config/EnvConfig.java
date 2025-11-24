@@ -2,27 +2,19 @@ package com.clinic.config;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
-/**
- * Manages environment configuration from .env file
- * Loads environment variables and provides type-safe access
- */
-
 public class EnvConfig {
     private static final Dotenv dotenv;
     private static EnvConfig instance;
 
     static {
-        // Load .env file once at class initialization
         dotenv = Dotenv.configure()
                 .ignoreIfMissing()
                 .load();
 
-        // Set system properties so other tools (like Flyway Maven plugin) can access them
         setSystemProperties();
     }
 
     private EnvConfig() {
-        // Private constructor for singleton
     }
 
     public static EnvConfig getInstance() {
@@ -32,9 +24,6 @@ public class EnvConfig {
         return instance;
     }
 
-    /**
-     * Set system properties for external tools to use
-     */
     private static void setSystemProperties() {
         System.setProperty("DB_HOST", getEnv("DB_HOST", "localhost"));
         System.setProperty("DB_PORT", getEnv("DB_PORT", "3306"));
@@ -43,9 +32,6 @@ public class EnvConfig {
         System.setProperty("DB_PASSWORD", getEnv("DB_PASSWORD", ""));
     }
 
-    /**
-     * Get environment variable value
-     */
     public static String getEnv(String key) {
         String value = dotenv.get(key);
         if (value == null) {
@@ -54,17 +40,11 @@ public class EnvConfig {
         return value;
     }
 
-    /**
-     * Get environment variable with default value
-     */
     public static String getEnv(String key, String defaultValue) {
         String value = dotenv.get(key);
         return value != null ? value : defaultValue;
     }
 
-    /**
-     * Get environment variable as integer
-     */
     public static int getEnvAsInt(String key, int defaultValue) {
         String value = dotenv.get(key);
         try {
@@ -75,15 +55,11 @@ public class EnvConfig {
         }
     }
 
-    /**
-     * Get environment variable as boolean
-     */
     public static boolean getEnvAsBoolean(String key, boolean defaultValue) {
         String value = dotenv.get(key);
         return value != null ? Boolean.parseBoolean(value) : defaultValue;
     }
 
-    // Database Configuration
     public static String getDbHost() {
         return getEnv("DB_HOST", "localhost");
     }
@@ -111,7 +87,6 @@ public class EnvConfig {
                 getDbName());
     }
 
-    // Application Configuration
     public static int getAppPort() {
         return getEnvAsInt("APP_PORT", 7000);
     }
@@ -120,9 +95,6 @@ public class EnvConfig {
         return getEnv("APP_ENV", "development");
     }
 
-    /**
-     * Check if all required environment variables are present
-     */
     public static boolean validateRequiredEnvVars() {
         String[] requiredVars = {"DB_HOST", "DB_PORT", "DB_NAME", "DB_USER"};
         boolean allPresent = true;
@@ -137,9 +109,6 @@ public class EnvConfig {
         return allPresent;
     }
 
-    /**
-     * Print all configuration (mask sensitive data)
-     */
     public static void printConfiguration() {
         System.out.println("=== Environment Configuration ===");
         System.out.println("DB_HOST: " + getDbHost());

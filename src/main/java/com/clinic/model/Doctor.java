@@ -8,20 +8,24 @@ public class Doctor {
     private String lastName;
     private String specialty;
     private String phone;
+    private String email;
     private LocalDateTime createdAt;
 
+    // Constructors
     public Doctor() {}
 
     public Doctor(Integer id, String firstName, String lastName, String specialty,
-                  String phone, LocalDateTime createdAt) {
+                  String phone, String email, LocalDateTime createdAt) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.specialty = specialty;
         this.phone = phone;
+        this.email = email;
         this.createdAt = createdAt;
     }
 
+    // Getters and Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -37,6 +41,13 @@ public class Doctor {
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
 }
