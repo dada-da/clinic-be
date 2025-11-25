@@ -4,6 +4,7 @@ import com.clinic.model.Appointment;
 import com.clinic.repository.AppointmentRepository;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,6 +17,14 @@ public class AppointmentService {
 
     public List<Appointment> getAllAppointments() throws SQLException {
         return appointmentRepository.findAll();
+    }
+
+    public List<Appointment> getAppointmentsByDate(LocalDate date) throws SQLException {
+        return appointmentRepository.findByDate(date);
+    }
+
+    public List<Appointment> getTodayAppointments() throws SQLException {
+        return appointmentRepository.findByDate(LocalDate.now());
     }
 
     public Appointment getAppointmentById(Integer id) throws SQLException {

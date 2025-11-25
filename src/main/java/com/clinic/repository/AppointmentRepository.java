@@ -4,6 +4,7 @@ import com.clinic.config.DatabaseConnection;
 import com.clinic.model.Appointment;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,6 +57,31 @@ public class AppointmentRepository {
         }
 
         return null;
+    }
+
+    public List<Appointment> findByDate(LocalDate date) throws SQLException {
+        List<Appointment> appointments = new ArrayList<>();
+        String sql = "SELECT a.*, p.full_name as patient_name, " +
+                "CONCAT(d.first_name, ' ', d.last_name) as doctor_name " +
+                "FROM appointment a " +
+                "JOIN patient p ON a.patient_id = p.id " +
+                "JOIN doctor d ON a.doctor_id = d.id " +
+                "WHERE DATE(a.date_time) = ? " +
+                "ORDER BY a.date_time";
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setDate(1, Date.valueOf(date));
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    appointments.add(mapResultSetToAppointment(rs));
+                }
+            }
+        }
+
+        return appointments;
     }
 
     public Appointment create(Appointment appointment) throws SQLException {

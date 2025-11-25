@@ -240,6 +240,16 @@ public class Main {
             appointmentController.getAllAppointments(ctx);
         });
 
+        app.get("/api/appointments/today", ctx -> {
+            System.out.println("│ Handler: Get today's appointments");
+            appointmentController.getTodayAppointments(ctx);
+        });
+
+        app.get("/api/appointments/date/{date}", ctx -> {
+            System.out.println("│ Handler: Get appointments by date");
+            appointmentController.getAppointmentsByDate(ctx);
+        });
+
         app.get("/api/appointments/{id}", ctx -> {
             System.out.println("│ Handler: Get appointment by ID");
             appointmentController.getAppointmentById(ctx);

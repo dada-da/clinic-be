@@ -6,6 +6,7 @@ import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 
 public class AppointmentController {
@@ -21,6 +22,32 @@ public class AppointmentController {
             ctx.json(appointments);
         } catch (SQLException e) {
             ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .json(new ErrorResponse("Failed to fetch appointments: " + e.getMessage()));
+        }
+    }
+
+    public void getAppointmentsByDate(Context ctx) {
+        try {
+            String dateStr = ctx.pathParam("date");
+            LocalDate date = LocalDate.parse(dateStr);
+            List<Appointment> appointments = appointmentService.getAppointmentsByDate(date);
+            ctx.contentType("application/json");
+            ctx.json(appointments);
+        } catch (Exception e) {
+            ctx.status(HttpStatus.BAD_REQUEST)
+                    .contentType("application/json")
+                    .json(new ErrorResponse("Invalid date format: " + e.getMessage()));
+        }
+    }
+
+    public void getTodayAppointments(Context ctx) {
+        try {
+            List<Appointment> appointments = appointmentService.getTodayAppointments();
+            ctx.contentType("application/json");
+            ctx.json(appointments);
+        } catch (SQLException e) {
+            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType("application/json")
                     .json(new ErrorResponse("Failed to fetch appointments: " + e.getMessage()));
         }
     }
