@@ -42,7 +42,6 @@ public class MedicalRecordController {
             MedicalRecord medicalRecord = ctx.bodyAsClass(MedicalRecord.class);
             MedicalRecord createdRecord = medicalRecordService.createMedicalRecord(medicalRecord);
 
-            // Automatically mark appointment as completed
             appointmentService.completeAppointment(medicalRecord.getAppointmentId());
 
             ctx.status(HttpStatus.CREATED).json(createdRecord);

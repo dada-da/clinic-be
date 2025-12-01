@@ -9,10 +9,7 @@ import org.flywaydb.core.api.configuration.FluentConfiguration;
 import java.io.File;
 import java.net.URL;
 
-/**
- * Handles database migrations using Flyway
- * Provides methods to migrate, validate, and check migration status
- */
+
 public class FlywayMigration {
     private final Flyway flyway;
 
@@ -20,9 +17,6 @@ public class FlywayMigration {
         this.flyway = configureFlyway();
     }
 
-    /**
-     * Configure Flyway with database connection and settings
-     */
     private Flyway configureFlyway() {
         FluentConfiguration config = Flyway.configure()
                 .dataSource(
@@ -35,18 +29,14 @@ public class FlywayMigration {
                 .baselineVersion("0")
                 .table("flyway_schema_history")
                 .validateOnMigrate(true)
-                .cleanDisabled(true); // Safety: prevent accidental data loss
+                .cleanDisabled(true);
 
         return config.load();
     }
 
-    /**
-     * Debug: Check if migration files exist
-     */
     public void checkMigrationFiles() {
         System.out.println("Checking for migration files...");
 
-        // Check classpath
         URL migrationUrl = getClass().getClassLoader().getResource("db/migration");
         if (migrationUrl != null) {
             System.out.println("✓ Migration directory found: " + migrationUrl.getPath());
@@ -70,9 +60,6 @@ public class FlywayMigration {
         System.out.println();
     }
 
-    /**
-     * Run all pending migrations
-     */
     public MigrateResult migrate() {
         try {
             System.out.println("Starting database migration...");
@@ -94,9 +81,6 @@ public class FlywayMigration {
         }
     }
 
-    /**
-     * Validate applied migrations against available migration scripts
-     */
     public boolean validate() {
         try {
             System.out.println("Validating database migrations...");
@@ -109,16 +93,10 @@ public class FlywayMigration {
         }
     }
 
-    /**
-     * Get information about all migrations
-     */
     public MigrationInfoService info() {
         return flyway.info();
     }
 
-    /**
-     * Print migration status
-     */
     public void printMigrationStatus() {
         System.out.println("=== Database Migration Status ===");
 
@@ -149,17 +127,11 @@ public class FlywayMigration {
         System.out.println("=================================\n");
     }
 
-    /**
-     * Check if database needs migration
-     */
     public boolean needsMigration() {
         MigrationInfoService infoService = flyway.info();
         return infoService.pending().length > 0;
     }
 
-    /**
-     * Baseline the database (for existing databases without Flyway)
-     */
     public void baseline() {
         try {
             System.out.println("Creating Flyway baseline...");
@@ -171,10 +143,6 @@ public class FlywayMigration {
         }
     }
 
-    /**
-     * Repair Flyway schema history table
-     * Use this to fix checksum mismatches or remove failed migrations
-     */
     public void repair() {
         try {
             System.out.println("Repairing Flyway schema history...");
@@ -186,9 +154,6 @@ public class FlywayMigration {
         }
     }
 
-    /**
-     * Get current database version
-     */
     public String getCurrentVersion() {
         MigrationInfoService infoService = flyway.info();
         MigrationInfo current = infoService.current();

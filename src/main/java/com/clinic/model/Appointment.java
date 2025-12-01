@@ -11,11 +11,9 @@ public class Appointment {
     private String reason;
     private LocalDateTime createdAt;
 
-    // For joined queries
     private String patientName;
     private String doctorName;
 
-    // Constructors
     public Appointment() {}
 
     public Appointment(Integer id, Integer patientId, Integer doctorId, LocalDateTime dateTime,
@@ -29,7 +27,6 @@ public class Appointment {
         this.createdAt = createdAt;
     }
 
-    // Getters and Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 

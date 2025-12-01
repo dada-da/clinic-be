@@ -11,7 +11,6 @@ public class Doctor {
     private String email;
     private LocalDateTime createdAt;
 
-    // Constructors
     public Doctor() {}
 
     public Doctor(Integer id, String firstName, String lastName, String specialty,
@@ -25,7 +24,6 @@ public class Doctor {
         this.createdAt = createdAt;
     }
 
-    // Getters and Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 

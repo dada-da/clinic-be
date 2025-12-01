@@ -5,6 +5,7 @@ import com.clinic.model.Appointment;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,20 +17,97 @@ public class AppointmentRepository {
     }
 
     public List<Appointment> findAll() throws SQLException {
+        return findWithFilters(null, null, null, null, null, null, null);
+    }
+
+    /**
+     * Find appointments with filters following REST API query parameter standards
+     *
+     * @param startDate Filter by date range start (inclusive)
+     * @param endDate Filter by date range end (inclusive)
+     * @param patientFirstName Filter by patient first name (partial match, case-insensitive)
+     * @param patientLastName Filter by patient last name (partial match, case-insensitive)
+     * @param doctorFirstName Filter by doctor first name (partial match, case-insensitive)
+     * @param doctorLastName Filter by doctor last name (partial match, case-insensitive)
+     * @param status Filter by exact status match
+     * @return List of appointments matching the filters
+     * @throws SQLException if database error occurs
+     */
+    public List<Appointment> findWithFilters(
+            LocalDate startDate,
+            LocalDate endDate,
+            String patientFirstName,
+            String patientLastName,
+            String doctorFirstName,
+            String doctorLastName,
+            String status) throws SQLException {
+
         List<Appointment> appointments = new ArrayList<>();
-        String sql = "SELECT a.*, p.full_name as patient_name, " +
-                "CONCAT(d.first_name, ' ', d.last_name) as doctor_name " +
-                "FROM appointment a " +
-                "JOIN patient p ON a.patient_id = p.id " +
-                "JOIN doctor d ON a.doctor_id = d.id " +
-                "ORDER BY a.date_time DESC";
+        StringBuilder sql = new StringBuilder(
+                "SELECT a.*, p.full_name as patient_name, " +
+                        "CONCAT(d.first_name, ' ', d.last_name) as doctor_name " +
+                        "FROM appointment a " +
+                        "JOIN patient p ON a.patient_id = p.id " +
+                        "JOIN doctor d ON a.doctor_id = d.id " +
+                        "WHERE 1=1 ");
+
+        List<Object> params = new ArrayList<>();
+
+        // Date range filter
+        if (startDate != null) {
+            sql.append("AND DATE(a.date_time) >= ? ");
+            params.add(Date.valueOf(startDate));
+        }
+        if (endDate != null) {
+            sql.append("AND DATE(a.date_time) <= ? ");
+            params.add(Date.valueOf(endDate));
+        }
+
+        // Patient name filters (partial match, case-insensitive)
+        if (patientFirstName != null && !patientFirstName.trim().isEmpty()) {
+            sql.append("AND LOWER(p.full_name) LIKE LOWER(?) ");
+            params.add("%" + patientFirstName.trim() + "%");
+        }
+        if (patientLastName != null && !patientLastName.trim().isEmpty()) {
+            sql.append("AND LOWER(p.full_name) LIKE LOWER(?) ");
+            params.add("%" + patientLastName.trim() + "%");
+        }
+
+        // Doctor name filters (partial match, case-insensitive)
+        if (doctorFirstName != null && !doctorFirstName.trim().isEmpty()) {
+            sql.append("AND LOWER(d.first_name) LIKE LOWER(?) ");
+            params.add("%" + doctorFirstName.trim() + "%");
+        }
+        if (doctorLastName != null && !doctorLastName.trim().isEmpty()) {
+            sql.append("AND LOWER(d.last_name) LIKE LOWER(?) ");
+            params.add("%" + doctorLastName.trim() + "%");
+        }
+
+        // Status filter (exact match)
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append("AND a.status = ? ");
+            params.add(status.trim());
+        }
+
+        sql.append("ORDER BY a.date_time DESC");
 
         try (Connection conn = dbConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            while (rs.next()) {
-                appointments.add(mapResultSetToAppointment(rs));
+            // Set parameters
+            for (int i = 0; i < params.size(); i++) {
+                Object param = params.get(i);
+                if (param instanceof Date) {
+                    pstmt.setDate(i + 1, (Date) param);
+                } else if (param instanceof String) {
+                    pstmt.setString(i + 1, (String) param);
+                }
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    appointments.add(mapResultSetToAppointment(rs));
+                }
             }
         }
 
@@ -60,28 +138,7 @@ public class AppointmentRepository {
     }
 
     public List<Appointment> findByDate(LocalDate date) throws SQLException {
-        List<Appointment> appointments = new ArrayList<>();
-        String sql = "SELECT a.*, p.full_name as patient_name, " +
-                "CONCAT(d.first_name, ' ', d.last_name) as doctor_name " +
-                "FROM appointment a " +
-                "JOIN patient p ON a.patient_id = p.id " +
-                "JOIN doctor d ON a.doctor_id = d.id " +
-                "WHERE DATE(a.date_time) = ? " +
-                "ORDER BY a.date_time";
-
-        try (Connection conn = dbConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setDate(1, Date.valueOf(date));
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    appointments.add(mapResultSetToAppointment(rs));
-                }
-            }
-        }
-
-        return appointments;
+        return findWithFilters(date, date, null, null, null, null, null);
     }
 
     public Appointment create(Appointment appointment) throws SQLException {

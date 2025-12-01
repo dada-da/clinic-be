@@ -40,7 +40,7 @@ public class MedicalRecordRepository {
             pstmt.setInt(1, medicalRecord.getAppointmentId());
             pstmt.setString(2, medicalRecord.getSymptoms());
             pstmt.setString(3, medicalRecord.getDiagnosis());
-            pstmt.setString(4, medicalRecord.getTreatment());  // FIXED: Use treatment field
+            pstmt.setString(4, medicalRecord.getTreatment());
 
             int affectedRows = pstmt.executeUpdate();
 
@@ -65,7 +65,7 @@ public class MedicalRecordRepository {
         record.setAppointmentId(rs.getInt("appointment_id"));
         record.setSymptoms(rs.getString("symptoms"));
         record.setDiagnosis(rs.getString("diagnosis"));
-        record.setTreatment(rs.getString("treatment"));  // FIXED: Map from treatment column
+        record.setTreatment(rs.getString("treatment"));
 
         Timestamp createdAt = rs.getTimestamp("created_at");
         if (createdAt != null) {

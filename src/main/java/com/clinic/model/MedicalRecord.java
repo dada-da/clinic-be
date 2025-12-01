@@ -11,7 +11,6 @@ public class MedicalRecord {
     private String notes;
     private LocalDateTime createdAt;
 
-    // Constructors
     public MedicalRecord() {}
 
     public MedicalRecord(Integer id, Integer appointmentId, String symptoms, String diagnosis,
@@ -25,7 +24,6 @@ public class MedicalRecord {
         this.createdAt = createdAt;
     }
 
-    // Getters and Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 

@@ -74,7 +74,6 @@ public class PatientService {
             throw new IllegalArgumentException("Gender is required");
         }
 
-        // Validate social ID format (example: alphanumeric, 9-12 characters)
         if (!patient.getSocialId().matches("^[A-Z0-9]{9,12}$")) {
             throw new IllegalArgumentException("Invalid social ID format. Must be 9-12 alphanumeric characters.");
         }

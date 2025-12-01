@@ -314,7 +314,6 @@ public class Main {
         System.out.println("=== Waiting for connections... ===\n");
     }
 
-    // Health response class
     static class HealthResponse {
         private String status;
         private String message;
